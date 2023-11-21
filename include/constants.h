@@ -1,6 +1,10 @@
 #pragma once
 #include <Arduino.h>
 
+const double HomeLatitude = 51.481312; // where you at; for doing moon phase
+const double HomeLongitude = -3.180500;
+
+const String metOfficeUri = "/public/data/val/wxfcs/all/json/350759?res=3hourly&key="; // replace 350759 nwith your location
 
 const char *Timezone = "GMT0BST,M3.5.0/01,M10.5.0/02"; // Choose your time zone from: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
                                                        // See below for examples

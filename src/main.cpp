@@ -27,10 +27,9 @@ weatherRecord weatherRecords[maxNumRecords];
 bool Get5DayWeatherRecord(WiFiClient &client)
 {
     HTTPClient http;
-    String uri = "/public/data/val/wxfcs/all/json/350759?res=3hourly&key=" + apikey;
 
     // http.begin(uri,test_root_ca); //HTTPS example connection
-    http.begin(client, "datapoint.metoffice.gov.uk", 80, uri);
+    http.begin(client, "datapoint.metoffice.gov.uk", 80, metOfficeUri + apikey);
     int httpCode = http.GET();
     Serial.print("httpCode: ");
     Serial.println(httpCode);
@@ -203,7 +202,7 @@ void setup()
         {               // Only if received both Weather or Forecast proceed
             StopWiFi(); // Reduces power consumption while displaying weather data
 
-            DisplayWeather(weatherRecords, numRecordsReceived, &timeinfo);
+            DisplayWeather(weatherRecords, numRecordsReceived, &timeinfo, HomeLatitude, HomeLongitude);
         }
         //}
     }

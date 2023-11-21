@@ -11,6 +11,7 @@
 #include <common_functions.h>
 
 #include <sunset.h>
+#include <moonPhase.h>
 
 #define SCREEN_WIDTH 800 // Set for landscape mode
 #define SCREEN_HEIGHT 480
@@ -110,7 +111,7 @@ void DrawGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float
                 minYscale = DataArray[i];
         }
 
-        if( minYscale < 0)
+        if (minYscale < 0)
         {
             if (minYscale != 0)
                 minYscale = round(minYscale - auto_scale_margin); // Auto scale the graph and round to the nearest value defined, default was Y1Min
@@ -121,7 +122,7 @@ void DrawGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float
             Y1Min = 0;
         }
 
-        if( maxYscale > 40)
+        if (maxYscale > 40)
         {
             maxYscale = round(maxYscale + auto_scale_margin); // Auto scale the graph and round to the nearest value defined, default was Y1Max
             Y1Max = round(maxYscale + 0.5);
@@ -142,7 +143,7 @@ void DrawGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float
         {
             Y1Max = 10;
         }
-        else 
+        else
         {
             maxYscale = round(maxYscale + auto_scale_margin); // Auto scale the graph and round to the nearest value defined, default was Y1Max
             Y1Max = round(maxYscale + 0.5);
@@ -376,8 +377,7 @@ void DisplayForecastIcons(weatherRecord *weatherRecords, int numRecords, tm *tim
 {
     // big
 
-    int xCurrent = 367;
-    int xInc = 173;
+    int xInc = 172;
 
     // if the morning, show midday and evening then tomorrow
 
@@ -386,6 +386,8 @@ void DisplayForecastIcons(weatherRecord *weatherRecords, int numRecords, tm *tim
     // morning
     if (timeNow->tm_hour < 12)
     {
+        int xCurrent = 367 - 109;
+
         // find midday, then show 6pm then 9am tomorrow
         for (int fIndex = 0; fIndex < numRecords; fIndex++)
         {
@@ -398,12 +400,10 @@ void DisplayForecastIcons(weatherRecord *weatherRecords, int numRecords, tm *tim
 
                 // go forward to 6pm
                 DisplayConditionsSection(xCurrent, 114, weatherRecords[fIndex + 2].weatherCode, weatherRecords[fIndex + 2].temperature, "6pm " + WeekdayToString(weatherRecords[fIndex + 2].time.tm_wday));
-                xCurrent += xInc;
+                xCurrent += xInc + 109;
 
                 // go forward to 9am
                 DisplayConditionsSection(xCurrent, 114, weatherRecords[fIndex + 5].weatherCode, weatherRecords[fIndex + 5].temperature, "9am " + WeekdayToString(weatherRecords[fIndex + 5].time.tm_wday));
-                xCurrent += xInc;
-
                 break;
             }
         }
@@ -411,6 +411,7 @@ void DisplayForecastIcons(weatherRecord *weatherRecords, int numRecords, tm *tim
     // afternoon
     else
     {
+        int xCurrent = 367;
         // find 9am tomorrow, then 12 and 6pm
         for (int fIndex = 0; fIndex < numRecords; fIndex++)
         {
@@ -427,17 +428,14 @@ void DisplayForecastIcons(weatherRecord *weatherRecords, int numRecords, tm *tim
 
                 // go forward to 6pm
                 DisplayConditionsSection(xCurrent, 114, weatherRecords[fIndex + 3].weatherCode, weatherRecords[fIndex + 3].temperature, "6pm " + WeekdayToString(weatherRecords[fIndex + 3].time.tm_wday));
-                xCurrent += xInc;
-
                 break;
             }
         }
     }
 }
-void DrawMoon(int x, int y, int dd, int mm, int yy)
+void DrawMoon(int x, int y, double phase)
 {
     const int diameter = 70;
-    double Phase = NormalizedMoonPhase(dd, mm, yy);
 
     // Draw dark part of moon
     display.fillCircle(x + diameter - 1, y + diameter, diameter / 2 + 1, GxEPD_BLACK);
@@ -448,15 +446,15 @@ void DrawMoon(int x, int y, int dd, int mm, int yy)
         // Determine the edges of the lighted part of the moon
         double Rpos = 2 * Xpos;
         double Xpos1, Xpos2;
-        if (Phase < 0.5)
+        if (phase < 0.5)
         {
             Xpos1 = -Xpos;
-            Xpos2 = Rpos - 2 * Phase * Rpos - Xpos;
+            Xpos2 = Rpos - 2 * phase * Rpos - Xpos;
         }
         else
         {
             Xpos1 = Xpos;
-            Xpos2 = Xpos - 2 * Phase * Rpos + Rpos;
+            Xpos2 = Xpos - 2 * phase * Rpos + Rpos;
         }
         // Draw light part of moon
         double pW1x = (Xpos1 + number_of_lines) / number_of_lines * diameter + x;
@@ -473,11 +471,12 @@ void DrawMoon(int x, int y, int dd, int mm, int yy)
     display.drawCircle(x + diameter - 1, y + diameter, diameter / 2, GxEPD_BLACK);
 }
 
-void DisplayAstronomySection(tm *timeNow)
+void DisplayAstronomySection(tm *timeNow, int xOffset, double latitude, double longitude)
 {
+
     SunSet sun;
-    sun.setPosition(51.481312, -3.180500, 0);
-    sun.setCurrentDate(timeNow->tm_year, timeNow->tm_mon, timeNow->tm_mday);
+    sun.setPosition(latitude, longitude, 0);
+    sun.setCurrentDate((timeNow->tm_year + 1900), (timeNow->tm_mon + 1), timeNow->tm_mday);
     int sunrise = static_cast<int>(sun.calcSunrise());
     int sunset = static_cast<int>(sun.calcSunset());
 
@@ -489,29 +488,45 @@ void DisplayAstronomySection(tm *timeNow)
 
     u8g2Fonts.setFont(u8g2_font_helvB24_tf);
     char day_output[5];
-    sprintf(day_output, "%02u:%02u", (sunrise / 60), (sunrise % 60)); 
-    drawString(187, 50, day_output, LEFT);
-    sprintf(day_output, "%02u:%02u", (sunset / 60), (sunset % 60)); 
-    drawString(187, 80, day_output, LEFT);
+    sprintf(day_output, "%02u:%02u", (sunrise / 60), (sunrise % 60));
+    drawString(187 + xOffset, 50, day_output, LEFT);
+    sprintf(day_output, "%02u:%02u", (sunset / 60), (sunset % 60));
+    drawString(187 + xOffset, 80, day_output, LEFT);
 
     time_t now = time(NULL);
     struct tm *now_utc = gmtime(&now);
     const int day_utc = now_utc->tm_mday;
     const int month_utc = now_utc->tm_mon + 1;
     const int year_utc = now_utc->tm_year + 1900;
-    // drawString(x + 4, y + 64, MoonPhase(day_utc, month_utc, year_utc, Hemisphere), LEFT);
-    DrawMoon(157, 90, timeNow->tm_mday, timeNow->tm_mon, timeNow->tm_year);
+
+    moonData_t moon;
+
+    moonPhase moonPhase;
+    moon = moonPhase.getPhase(); // gets the current moon phase ( 1/1/1970 at 00:00:00 UTC )
+
+    Serial.print("Moon phase angle: ");
+    Serial.print(moon.angle); // angle is a integer between 0-360
+    Serial.println(" degrees.");
+    Serial.print("Moon surface lit: ");
+    Serial.println(moon.percentLit * 100); // percentLit is a real between 0-1
+
+    double phase = ((double)moon.angle + 180) / 360;
+
+    Serial.print("moon phase 0-1 0=full, 0.5=new, 1 = full");
+    Serial.println(phase);
+    DrawMoon(157 + xOffset, 90, phase);
 }
 
-void DisplayWeather(weatherRecord *weatherRecords, int numRecords, tm *timeNow)
+void DisplayWeather(weatherRecord *weatherRecords, int numRecords, tm *timeNow, double latitude, double longitude)
 {
+
     DisplayGraphs(weatherRecords, numRecords);
-    
+
     DisplayConditionsSection(86, 114, weatherRecords[0].weatherCode, weatherRecords[0].temperature, "Now (" + WeekdayToString(weatherRecords[0].time.tm_wday) + ")");
 
     DisplayForecastIcons(weatherRecords, numRecords, timeNow);
 
-    DisplayAstronomySection(timeNow);
+    DisplayAstronomySection(timeNow, timeNow->tm_hour < 12 ? (173 * 2) : 0, latitude, longitude);
 
     display.display(false); // Full screen update mode
 }
