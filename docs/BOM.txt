@@ -1,0 +1,3 @@
+esp32 , "SPI E-Paper ESP32 Universal Electronic Paper Ink Screen Panel Wireless Internet Waveshare Driver Board WiFi Bluetooth Wave Share
+", https://www.aliexpress.com/item/4000804064988.html?spm=a2g0o.order_detail.order_detail_item.3.61faf19cF0oGYZ
+eink display, "7.5inch Advanced E-Paper E-ink Epaper Screen Display Monitor Kit for Arduino RPI Raspberry Pi Zero 2 W WH 3 Model B Plus 3B 4 4B", https://www.aliexpress.com/item/1005003802145070.html?spm=a2g0o.order_list.order_list_main.5.21ef1802iIA8wQ
